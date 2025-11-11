@@ -1,4 +1,4 @@
-// lib/ai-services.ts
+// lib/gemini.ts
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
@@ -6,32 +6,37 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 export async function analyzeUIElements(imageBase64: string) {
   const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
-  const prompt = `Analyze this UI/UX design and identify all elements. Return ONLY valid JSON:
+  const prompt = `You are a UX expert analyzing a UI design. Analyze this interface and identify key elements.
+
+CRITICAL RULES:
+- Return ONLY valid JSON, no explanations
+- Focus on actionable UX issues, not implementation details
+- Be specific about element locations (top, middle, bottom, left, right)
+
+Return this exact structure:
 
 {
   "elements": [
     {
-      "type": "button|link|input|navigation|heading|image",
-      "label": "element text or description",
-      "position": "top-left|top-center|top-right|center|bottom-left|etc",
-      "importance": 1-10,
-      "coordinates": {"x": 0-100, "y": 0-100}
+      "type": "cta_button|navigation|form|heading|image|text_block",
+      "label": "brief label",
+      "position": "top-left|top-center|top-right|middle-left|middle-center|middle-right|bottom-left|bottom-center|bottom-right",
+      "importance": 1-10
     }
   ],
-  "visualHierarchy": {
-    "primary": ["element labels"],
-    "secondary": ["element labels"],
-    "tertiary": ["element labels"]
+  "primaryCTA": {
+    "exists": true|false,
+    "label": "CTA text",
+    "position": "location",
+    "visibility": "high|medium|low"
   },
-  "frictionPoints": ["description of issues"]
-}
-
-Focus on:
-1. All clickable elements (buttons, links, CTAs)
-2. Form fields and inputs
-3. Navigation elements
-4. Visual hierarchy
-5. Potential UX friction points`;
+  "visualHierarchy": {
+    "clear": true|false,
+    "primaryFocus": "what element draws attention first",
+    "issues": ["list any hierarchy problems"]
+  },
+  "overallLayout": "landing_page|dashboard|ecommerce|blog|form|other"
+}`;
 
   const result = await model.generateContent([
     prompt,
@@ -43,71 +48,110 @@ Focus on:
     },
   ]);
 
-  const response = await result.response;
-  const text = response.text();
-
-  // Extract JSON from markdown code blocks if present
+  const text = result.response.text();
   const jsonMatch =
     text.match(/```json\n?([\s\S]*?)\n?```/) || text.match(/\{[\s\S]*\}/);
 
   if (!jsonMatch) {
-    console.error("No JSON found in response:", text);
-    throw new Error("Invalid response format");
+    console.error("Invalid response:", text);
+    throw new Error("AI returned invalid format");
   }
 
-  const jsonText = jsonMatch[1] || jsonMatch[0];
-  return JSON.parse(jsonText);
+  return JSON.parse(jsonMatch[1] || jsonMatch[0]);
 }
 
 export async function predictUserBehavior(uiElements: any) {
   const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
-  const prompt = `Given these UI elements: ${JSON.stringify(uiElements)}
+  const prompt = `You are a UX expert predicting user behavior. Given this UI analysis: ${JSON.stringify(
+    uiElements,
+    null,
+    2
+  )}
 
-Predict user behavior and return ONLY valid JSON:
+CRITICAL RULES FOR METRICS (MUST BE LOGICALLY CONSISTENT):
+1. Conversion funnel MUST decrease monotonically: PageView (100%) > Engagement > Click > Conversion
+2. Engagement must be 40-85% of page views
+3. Click rate must be 30-70% of engagement
+4. Conversion must be 3-25% of clicks
+5. Bounce rate is inverse of engagement (if engagement is 60%, bounce is ~40%)
+
+CRITICAL RULES FOR RECOMMENDATIONS:
+1. ONLY suggest recommendations if there are ACTUAL UX problems
+2. Focus on HIGH-LEVEL UX issues: unclear CTAs, poor visual hierarchy, weak value proposition, confusing navigation
+3. DO NOT analyze specific UI components unless they have critical UX flaws
+4. Each recommendation must be actionable and explain the business impact
+5. If the design is good, return an empty insights array []
+
+Return ONLY valid JSON:
 
 {
   "hotspots": [
     {
-      "x": 0-100,
-      "y": 0-100,
-      "intensity": 0-100,
-      "label": "description"
+      "x": 10-90,
+      "y": 10-90,
+      "intensity": 50-100,
+      "label": "area name"
     }
   ],
   "metrics": {
-    "expectedConversionRate": number,
-    "clickThroughRate": number,
-    "bounceRate": number,
-    "engagementScore": 1-10
+    "expectedConversionRate": 3-25,
+    "engagementScore": 40-85,
+    "clickThroughRate": 25-60,
+    "bounceRate": 15-60
   },
   "insights": [
     {
-      "title": "short title",
-      "description": "detailed description",
+      "title": "High-level UX issue (e.g., 'Weak Call-to-Action')",
+      "description": "Explain the problem and why it matters for users",
       "impact": "high|medium|low",
-      "expectedImprovement": "+X% metric",
-      "confidence": 0-100
+      "expectedImprovement": "+X% [specific metric like 'conversion rate' or 'engagement']",
+      "confidence": 75-95
     }
   ],
-  "userPath": "description of eye-tracking pattern",
-  "dropOffPoints": ["list of potential drop-off areas"]
+  "userPath": "Brief description of natural eye-tracking flow (F-pattern, Z-pattern, etc.)"
 }
 
-Base on UX principles: Fitts's Law, F-pattern, Z-pattern, visual hierarchy, cognitive load.`;
+IMPORTANT: 
+- If engagement is 60%, make clickThroughRate around 35-45% and conversion around 8-15%
+- Improvement should be realistic: +5-25% for high impact, +3-10% for medium, +1-5% for low
+- Only include 2-4 insights maximum, focusing on the BIGGEST issues`;
 
   const result = await model.generateContent(prompt);
-  const response = await result.response;
-  const text = response.text();
+  const text = result.response.text();
 
   const jsonMatch =
     text.match(/```json\n?([\s\S]*?)\n?```/) || text.match(/\{[\s\S]*\}/);
 
   if (!jsonMatch) {
-    console.error("No JSON found in response:", text);
-    throw new Error("Invalid response format");
+    console.error("Invalid response:", text);
+    throw new Error("AI returned invalid format");
   }
 
-  const jsonText = jsonMatch[1] || jsonMatch[0];
-  return JSON.parse(jsonText);
+  const data = JSON.parse(jsonMatch[1] || jsonMatch[0]);
+
+  // Validate and fix metrics if AI still messed up
+  return validateAndFixMetrics(data);
+}
+
+function validateAndFixMetrics(data: any) {
+  const metrics = data.metrics;
+
+  if (metrics.engagementScore > 85) metrics.engagementScore = 75;
+  if (metrics.engagementScore < 40) metrics.engagementScore = 50;
+
+  if (metrics.clickThroughRate >= metrics.engagementScore) {
+    metrics.clickThroughRate = Math.floor(metrics.engagementScore * 0.6);
+  }
+
+  if (metrics.expectedConversionRate >= metrics.clickThroughRate) {
+    metrics.expectedConversionRate = Math.floor(metrics.clickThroughRate * 0.3);
+  }
+
+  metrics.bounceRate = Math.min(
+    85,
+    Math.max(15, 100 - metrics.engagementScore)
+  );
+
+  return data;
 }

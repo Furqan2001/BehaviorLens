@@ -1,27 +1,27 @@
-// app/insights/[id]/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
 import BehaviorInsights from "@/components/BehaviorInsights";
 import MetricsPanel from "@/components/MetricsPanel";
-import { ArrowRight, BarChart3, Eye, TrendingUp, Loader2 } from "lucide-react";
-import { motion } from "framer-motion";
+import { BarChart3, Eye, TrendingUp, ArrowLeft, Sparkles } from "lucide-react";
+import HeatmapPanel from "@/components/HeatmapPanel";
+import Link from "next/link";
 
 export default function InsightsPage() {
   const params = useParams();
   const router = useRouter();
   const [analysis, setAnalysis] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedTab, setSelectedTab] = useState<
+    "metrics" | "heatmap" | "recommendations"
+  >("metrics");
 
   useEffect(() => {
-    // Load analysis from localStorage (in production, fetch from API/database)
     const savedAnalysis = localStorage.getItem(`analysis-${params.id}`);
     if (savedAnalysis) {
       setAnalysis(JSON.parse(savedAnalysis));
     } else {
-      // If no analysis found, redirect to analyze page
       router.push("/analyze");
     }
     setLoading(false);
@@ -29,114 +29,170 @@ export default function InsightsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50/30 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-full mb-4 animate-pulse">
+            <Sparkles className="w-8 h-8 text-white" />
+          </div>
+          <p className="text-slate-600 font-medium">Loading insights...</p>
+        </div>
       </div>
     );
   }
 
   if (!analysis) return null;
 
+  const tabs = [
+    {
+      id: "metrics" as const,
+      label: "Performance Metrics",
+      description: "Conversion rates and engagement predictions",
+      icon: TrendingUp,
+      gradient: "from-blue-500 to-cyan-400",
+    },
+    {
+      id: "heatmap" as const,
+      label: "Heatmap Analysis",
+      description: "Visual attention zones and interaction hotspots",
+      icon: Eye,
+      gradient: "from-cyan-500 to-teal-400",
+    },
+    {
+      id: "recommendations" as const,
+      label: "AI Recommendations",
+      description: "AI-powered recommendations for improving your design",
+      icon: BarChart3,
+      gradient: "from-violet-500 to-purple-400",
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50/30">
+      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        <Link
+          href="/analyze"
+          className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6 transition-colors group"
+        >
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+          <span className="text-sm font-medium">Back to Analyze</span>
+        </Link>
+
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200/50 rounded-full text-xs font-medium text-green-700 mb-4">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            Analysis Complete
+          </div>
+          <h1 className="text-4xl font-bold text-slate-900 mb-2">
             Analysis Results
           </h1>
-          <p className="text-gray-600">
+          <p className="text-slate-600">
             {analysis.fileName || "Uploaded design"}
           </p>
         </div>
 
-        {/* Quick Navigation Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <Link
-            href={`/heatmap/${params.id}`}
-            className="group bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-all border border-gray-100"
-          >
-            <div className="flex items-start justify-between mb-4">
-              <div className="p-3 bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl">
-                <Eye className="w-6 h-6 text-white" />
-              </div>
-              <ArrowRight className="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform" />
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">
-              Heatmap Analysis
-            </h3>
-            <p className="text-sm text-gray-600">
-              Visual attention zones and interaction hotspots
-            </p>
-          </Link>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = selectedTab === tab.id;
 
-          <Link
-            href={`/metrics/${params.id}`}
-            className="group bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-all border border-gray-100"
-          >
-            <div className="flex items-start justify-between mb-4">
-              <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl">
-                <BarChart3 className="w-6 h-6 text-white" />
-              </div>
-              <ArrowRight className="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform" />
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">
-              Performance Metrics
-            </h3>
-            <p className="text-sm text-gray-600">
-              Conversion rates and engagement predictions
-            </p>
-          </Link>
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setSelectedTab(tab.id)}
+                className={`relative group rounded-2xl p-6 text-left transition-all border ${
+                  isActive
+                    ? "bg-white border-slate-200 shadow-xl shadow-slate-200/50"
+                    : "bg-white/60 border-slate-100 hover:bg-white hover:border-slate-200 hover:shadow-lg"
+                }`}
+              >
+                {isActive && (
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-50/50 to-cyan-50/50 -z-10" />
+                )}
 
-          <button
-            onClick={() => router.push("/analyze")}
-            className="group bg-gradient-to-br from-purple-500 to-blue-600 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all text-left"
-          >
-            <div className="flex items-start justify-between mb-4">
-              <div className="p-3 bg-white/20 rounded-xl">
-                <TrendingUp className="w-6 h-6 text-white" />
-              </div>
-              <ArrowRight className="w-5 h-5 text-white group-hover:translate-x-1 transition-transform" />
-            </div>
-            <h3 className="text-xl font-bold text-white mb-2">
-              Analyze New Design
-            </h3>
-            <p className="text-sm text-purple-100">
-              Upload another design for comparison
-            </p>
-          </button>
+                <div className="flex items-start justify-between mb-4">
+                  <div
+                    className={`p-3 rounded-xl bg-gradient-to-br ${
+                      tab.gradient
+                    } ${
+                      isActive
+                        ? "shadow-lg shadow-blue-500/20 scale-110"
+                        : "opacity-80 group-hover:opacity-100 group-hover:scale-105"
+                    } transition-all`}
+                  >
+                    <Icon className="w-6 h-6 text-white" />
+                  </div>
+
+                  {isActive && (
+                    <div className="flex items-center gap-1 px-2 py-1 bg-blue-100 rounded-full">
+                      <div className="w-1.5 h-1.5 bg-blue-600 rounded-full" />
+                      <span className="text-xs font-semibold text-blue-700">
+                        Active
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <h3
+                  className={`text-lg font-bold mb-2 ${
+                    isActive ? "text-slate-900" : "text-slate-700"
+                  }`}
+                >
+                  {tab.label}
+                </h3>
+                <p
+                  className={`text-sm leading-relaxed ${
+                    isActive ? "text-slate-600" : "text-slate-500"
+                  }`}
+                >
+                  {tab.description}
+                </p>
+              </button>
+            );
+          })}
         </div>
 
-        {/* Metrics Overview */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">
-            Key Metrics Overview
-          </h2>
-          <MetricsPanel metrics={analysis.metrics} />
-        </div>
+        <div className="relative">
+          <div className="animate-fadeIn">
+            {selectedTab === "metrics" && (
+              <div className="mb-12">
+                <MetricsPanel metrics={analysis.metrics} />
+              </div>
+            )}
 
-        {/* Behavior Insights */}
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">
-            AI-Powered Recommendations
-          </h2>
-          <BehaviorInsights insights={analysis.insights} />
-        </div>
+            {selectedTab === "heatmap" && (
+              <div className="mb-12">
+                <HeatmapPanel
+                  imageUrl={analysis.imageUrl}
+                  hotspots={analysis.hotspots || []}
+                  userPath={analysis.userPath}
+                />
+              </div>
+            )}
 
-        {/* Design Preview */}
-        <div className="mt-12 bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">
-            Analyzed Design
-          </h2>
-          <div className="aspect-video bg-gray-100 rounded-xl overflow-hidden">
-            <img
-              src={analysis.imageUrl}
-              alt="Analyzed design"
-              className="w-full h-full object-contain"
-            />
+            {selectedTab === "recommendations" && (
+              <div className="mb-12">
+                <BehaviorInsights insights={analysis.insights} />
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.3s ease-out;
+        }
+      `}</style>
     </div>
   );
 }

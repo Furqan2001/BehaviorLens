@@ -12,10 +12,8 @@ interface HeatmapProps {
   }>;
 }
 
-export default function HeatmapViewer({ imageUrl, hotspots }: HeatmapProps) {
+export default function Heatmap({ imageUrl, hotspots }: HeatmapProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  console.log(hotspots);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -28,28 +26,51 @@ export default function HeatmapViewer({ imageUrl, hotspots }: HeatmapProps) {
     const img = new Image();
     img.src = imageUrl;
     img.onload = () => {
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx.drawImage(img, 0, 0);
+      // Set canvas size to image size and account for devicePixelRatio for crisp rendering
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.round(img.width * dpr);
+      canvas.height = Math.round(img.height * dpr);
+      canvas.style.width = `${img.width}px`;
+      canvas.style.height = `${img.height}px`;
+
+      // Draw the image scaled for DPR
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, img.width, img.height);
+      ctx.drawImage(img, 0, 0, img.width, img.height);
 
       // Draw heatmap overlay
       hotspots.forEach((spot) => {
-        const gradient = ctx.createRadialGradient(
-          spot.x,
-          spot.y,
-          0,
-          spot.x,
-          spot.y,
-          80
-        );
+        // Accept coordinates as percentage (0-100) or fraction (0-1) or pixels.
+        let x = spot.x;
+        let y = spot.y;
 
-        const opacity = spot.intensity / 100;
+        // If coordinates look like percentages (0-100), convert to pixels
+        if (x > 1 && x <= 100) x = (x / 100) * img.width;
+        if (y > 1 && y <= 100) y = (y / 100) * img.height;
+
+        // If coordinates are given as fractions (0-1), convert to pixels
+        if (x > 0 && x <= 1) x = x * img.width;
+        if (y > 0 && y <= 1) y = y * img.height;
+
+        // Fallbacks
+        const intensity =
+          typeof spot.intensity === "number" ? spot.intensity : 50;
+
+        // Radius scales with image size and intensity
+        const baseRadius = Math.max(img.width, img.height) * 0.08; // 8% of larger dimension
+        const radius = baseRadius * (intensity / 100);
+
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+
+        const opacity = Math.max(0, Math.min(1, intensity / 100));
         gradient.addColorStop(0, `rgba(255, 0, 0, ${opacity * 0.6})`);
         gradient.addColorStop(0.5, `rgba(255, 165, 0, ${opacity * 0.3})`);
         gradient.addColorStop(1, "rgba(255, 255, 0, 0)");
 
         ctx.fillStyle = gradient;
-        ctx.fillRect(spot.x - 80, spot.y - 80, 160, 160);
+
+        // Draw a rectangle covering the gradient area (in canvas pixels space)
+        ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
       });
     };
   }, [imageUrl, hotspots]);
@@ -60,7 +81,7 @@ export default function HeatmapViewer({ imageUrl, hotspots }: HeatmapProps) {
         ref={canvasRef}
         className="max-w-full h-auto rounded-lg shadow-lg"
       />
-      <div className="absolute top-4 right-4 bg-white/90 backdrop-blur p-3 rounded-lg">
+      <div className="absolute top-4 text-black right-4 bg-white/90 backdrop-blur p-3 rounded-lg">
         <h3 className="font-bold text-sm mb-2">Interaction Zones</h3>
         <div className="flex items-center gap-2 text-xs">
           <div className="w-4 h-4 bg-red-500 rounded"></div>

@@ -1,4 +1,3 @@
-// components/ImageUploader.tsx
 "use client";
 
 import { useCallback, useState } from "react";
@@ -211,56 +210,7 @@ export default function ImageUploader({
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
           className="mt-8"
-        >
-          <p className="text-center text-sm text-gray-500 mb-4">
-            Or try with sample designs:
-          </p>
-          <div className="grid grid-cols-3 gap-4">
-            {[
-              {
-                name: "E-commerce",
-                url: "/examples/ecommerce.jpg",
-                description: "Product page",
-              },
-              {
-                name: "SaaS Landing",
-                url: "/examples/saas.jpg",
-                description: "Hero section",
-              },
-              {
-                name: "Mobile App",
-                url: "/examples/mobile.jpg",
-                description: "Signup flow",
-              },
-            ].map((sample, idx) => (
-              <button
-                key={idx}
-                onClick={() => {
-                  // Load sample image
-                  fetch(sample.url)
-                    .then((res) => res.blob())
-                    .then((blob) => {
-                      const file = new File([blob], sample.name, {
-                        type: "image/jpeg",
-                      });
-                      onDrop([file]);
-                    });
-                }}
-                className="group p-4 bg-white rounded-xl border border-gray-200 hover:border-blue-400 hover:shadow-md transition-all"
-              >
-                <div className="aspect-video bg-gray-100 rounded-lg mb-2 overflow-hidden">
-                  <div className="w-full h-full flex items-center justify-center text-gray-400 group-hover:text-blue-600 transition-colors">
-                    <ImageIcon className="w-8 h-8" />
-                  </div>
-                </div>
-                <p className="text-sm font-medium text-gray-900">
-                  {sample.name}
-                </p>
-                <p className="text-xs text-gray-500">{sample.description}</p>
-              </button>
-            ))}
-          </div>
-        </motion.div>
+        ></motion.div>
       )}
     </div>
   );
