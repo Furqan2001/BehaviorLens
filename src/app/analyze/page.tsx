@@ -28,19 +28,12 @@ export default function AnalyzePage() {
 
       const data = await response.json();
 
-      const id = Date.now().toString(36) + Math.random().toString(36).substr(2);
-      localStorage.setItem(
-        `analysis-${id}`,
-        JSON.stringify({
-          ...data,
-          // imageURL too large for localStorage
-          fileName: file.name,
-          timestamp: new Date().toISOString(),
-        })
-      );
+      if (!data.success) {
+        throw new Error(data.error || "Analysis failed");
+      }
 
-      // Redirect to insights
-      router.push(`/insights/${id}`);
+      // Redirect directly to insights with the ID from the response
+      router.push(`/insights/${data.id}`);
     } catch (error) {
       console.error("Analysis failed:", error);
       alert("Analysis failed. Please try again.");

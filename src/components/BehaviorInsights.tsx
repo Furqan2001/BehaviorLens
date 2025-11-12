@@ -105,15 +105,17 @@ export default function BehaviorInsights({
                 </p>
 
                 <div className="flex items-center justify-between gap-4 pt-3 border-t border-slate-100">
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-blue-600" />
-                    <span className="text-sm font-semibold text-slate-900">
-                      Expected improvement:
-                    </span>
-                    <span className="text-sm font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-                      {insight.expectedImprovement}
-                    </span>
-                  </div>
+                  {insight.expectedImprovement && (
+                    <div className="flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-blue-600" />
+                      <span className="text-sm font-semibold text-slate-900">
+                        Expected improvement:
+                      </span>
+                      <span className="text-sm font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+                        {insight.expectedImprovement}
+                      </span>
+                    </div>
+                  )}
 
                   {insight.confidence && (
                     <div className="flex items-center gap-2">

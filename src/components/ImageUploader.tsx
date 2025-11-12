@@ -22,6 +22,16 @@ export default function ImageUploader({
       const file = acceptedFiles[0];
       if (!file) return;
 
+      const allowedExts = [".png", ".jpg", ".jpeg", ".webp", ".gif"];
+      const fileNameLower = file.name.toLowerCase();
+      const ext = fileNameLower.substring(fileNameLower.lastIndexOf("."));
+      if (!allowedExts.includes(ext)) {
+        window.alert(
+          "Unsupported file type. Only PNG, JPG (JPEG), WEBP, and GIF files are allowed."
+        );
+        return;
+      }
+
       // Create preview
       const reader = new FileReader();
       reader.onload = () => {
@@ -39,7 +49,10 @@ export default function ImageUploader({
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      "image/*": [".png", ".jpg", ".jpeg", ".webp", ".gif"],
+      "image/png": [".png"],
+      "image/jpeg": [".jpg", ".jpeg"],
+      "image/webp": [".webp"],
+      "image/gif": [".gif"],
     },
     maxFiles: 1,
     disabled: loading,
@@ -97,7 +110,6 @@ export default function ImageUploader({
                   )}
                 </motion.div>
 
-                {/* Text */}
                 <div className="text-center">
                   <p className="text-xl font-semibold text-gray-900 mb-2">
                     {loading
@@ -113,7 +125,6 @@ export default function ImageUploader({
                   </p>
                 </div>
 
-                {/* Supported formats */}
                 {!loading && (
                   <div className="flex items-center gap-2 mt-2">
                     <ImageIcon className="w-4 h-4 text-gray-400" />
@@ -149,7 +160,6 @@ export default function ImageUploader({
                   className="w-full h-full object-contain"
                 />
 
-                {/* Remove button */}
                 <button
                   onClick={clearPreview}
                   className="absolute top-4 right-4 p-2 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-colors"
@@ -158,7 +168,6 @@ export default function ImageUploader({
                   <X className="w-5 h-5" />
                 </button>
 
-                {/* Loading overlay */}
                 {loading && (
                   <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center">
                     <div className="text-center">
@@ -171,7 +180,6 @@ export default function ImageUploader({
                 )}
               </div>
 
-              {/* File info */}
               <div className="p-4 bg-gray-50 border-t border-gray-200">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -203,7 +211,6 @@ export default function ImageUploader({
         )}
       </AnimatePresence>
 
-      {/* Sample designs section */}
       {!preview && !loading && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}

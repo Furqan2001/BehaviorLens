@@ -82,12 +82,6 @@ export default function HomePage() {
               Start Analyzing
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
-            <Link
-              href="#how-it-works"
-              className="px-8 py-4 bg-white border-2 border-slate-200 text-slate-700 rounded-xl font-semibold hover:border-slate-300 hover:shadow-lg transition-all"
-            >
-              See How It Works
-            </Link>
           </div>
 
           {/* <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-8 max-w-3xl mx-auto">

@@ -13,19 +13,45 @@ export default function InsightsPage() {
   const router = useRouter();
   const [analysis, setAnalysis] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedTab, setSelectedTab] = useState<
     "metrics" | "heatmap" | "recommendations"
   >("metrics");
 
   useEffect(() => {
-    const savedAnalysis = localStorage.getItem(`analysis-${params.id}`);
-    if (savedAnalysis) {
-      setAnalysis(JSON.parse(savedAnalysis));
-    } else {
-      router.push("/analyze");
+    const fetchAnalysis = async () => {
+      try {
+        const response = await fetch(`/api/analysis/${params.id}`);
+
+        if (!response.ok) {
+          if (response.status === 404) {
+            setError("Analysis not found");
+          } else {
+            setError("Failed to load analysis");
+          }
+          setLoading(false);
+          return;
+        }
+
+        const result = await response.json();
+
+        if (result.success) {
+          setAnalysis(result.data);
+        } else {
+          setError("Failed to load analysis");
+        }
+      } catch (err) {
+        console.error("Error fetching analysis:", err);
+        setError("Failed to load analysis");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (params.id) {
+      fetchAnalysis();
     }
-    setLoading(false);
-  }, [params.id, router]);
+  }, [params.id]);
 
   if (loading) {
     return (
@@ -40,7 +66,30 @@ export default function InsightsPage() {
     );
   }
 
-  if (!analysis) return null;
+  if (error || !analysis) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50/30 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
+            <span className="text-3xl">⚠️</span>
+          </div>
+          <h2 className="text-2xl font-bold text-slate-900 mb-2">
+            {error || "Analysis Not Found"}
+          </h2>
+          <p className="text-slate-600 mb-6">
+            The analysis you're looking for doesn't exist or has been removed.
+          </p>
+          <Link
+            href="/analyze"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-400 text-white font-medium rounded-xl hover:shadow-lg transition-all"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Analyze
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const tabs = [
     {
@@ -155,7 +204,11 @@ export default function InsightsPage() {
           <div className="animate-fadeIn">
             {selectedTab === "metrics" && (
               <div className="mb-12">
-                <MetricsPanel metrics={analysis.metrics} />
+                <MetricsPanel
+                  metrics={analysis.metrics}
+                  elementBreakdown={analysis.elementBreakdown}
+                  strengths={analysis.strengths}
+                />
               </div>
             )}
 

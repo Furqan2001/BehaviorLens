@@ -30,8 +30,9 @@ export default function Heatmap({ imageUrl, hotspots }: HeatmapProps) {
       const dpr = window.devicePixelRatio || 1;
       canvas.width = Math.round(img.width * dpr);
       canvas.height = Math.round(img.height * dpr);
-      canvas.style.width = `${img.width}px`;
-      canvas.style.height = `${img.height}px`;
+      canvas.style.width = "100%";
+      canvas.style.height = "auto";
+      canvas.style.aspectRatio = `${img.width} / ${img.height}`;
 
       // Draw the image scaled for DPR
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
